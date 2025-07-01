@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Map from "../components/Map";
 import LandmarkFilters from "../components/LandmarkFilters";
 import LandmarkList from "../components/LandmarkList";
+import { PlaceResult } from "@/types/types";
+import { Landmark } from "@/types/types";
+import { convertPlaceResultsToLandmarks } from "@/utils/convertPlaceResults";
 
 export default function HomePage() {
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -12,14 +15,41 @@ export default function HomePage() {
   } | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [address, setAddress] = useState("");
+  const [landmarks, setLandmarks] = useState<Landmark[]>([]); // updated type
+
+  useEffect(() => {
+    const fetchNearbyGroceryStores = async () => {
+      if (!selectedLocation) return;
+
+      try {
+        const res = await fetch(
+          `/api/places?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}`
+        );
+        const data: PlaceResult[] = await res.json();
+        console.log("Fetched places:", data);
+        if (res.ok) {
+          const converted = convertPlaceResultsToLandmarks(
+            data,
+            selectedLocation,
+            "Grocery Store"
+          );
+          setLandmarks(converted);
+        } else {
+          console.error("Failed to fetch grocery stores", data);
+        }
+      } catch (err) {
+        console.error("Error fetching grocery stores", err);
+      }
+    };
+
+    fetchNearbyGroceryStores();
+  }, [selectedLocation]);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-300 text-gray-800 font-sans">
       {/* Header */}
       <header className="px-6 py-4 border-b border-gray-200 text-center">
-        <h1 className="text-2xl font-medium tracking-tight">
-          Landmark Distance Finder
-        </h1>
+        <h1 className="text-2xl font-medium tracking-tight">HomeScope</h1>
       </header>
 
       {/* Controls */}
@@ -78,13 +108,14 @@ export default function HomePage() {
           <LandmarkList
             location={selectedLocation}
             categories={selectedCategories}
+            landmarks={landmarks}
           />
         </aside>
       </main>
 
       {/* Footer */}
       <footer className="px-4 py-4 border-t border-gray-200 text-center text-sm text-gray-500">
-        &copy; 2025 Josh Woods — Landmark Distance Finder
+        &copy; 2025 Josh Woods — HomeScope
       </footer>
     </div>
   );

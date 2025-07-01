@@ -18,6 +18,5 @@ export async function GET(req: NextRequest) {
   if (data.status !== 'OK') {
     return NextResponse.json({ error: data.error_message || 'Geocoding failed' }, { status: 500 });
   }
-  // console.log(data.results[0]?.geometry.location)
   return NextResponse.json(data.results[0]?.geometry.location);
 }
