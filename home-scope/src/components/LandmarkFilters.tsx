@@ -1,14 +1,12 @@
 // src/components/LandmarkFilters.tsx
 
 import React from 'react';
+import { categories } from '@/utils/landMarkCategories';
 
 interface LandmarkFiltersProps {
   selectedCategories: string[];
   setSelectedCategories: (categories: string[]) => void;
 }
-
-// List your landmark categories here
-const categories = ['Grocery Store', 'Gas Station', 'Church', 'Park', 'Restaurant'];
 
 const LandmarkFilters: React.FC<LandmarkFiltersProps> = ({
   selectedCategories,

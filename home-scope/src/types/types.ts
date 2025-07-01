@@ -1,5 +1,5 @@
 export interface PlaceResult {
-  types: never[];
+  types: string[];
   place_id: string;
   name: string;
   vicinity: string;

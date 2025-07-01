@@ -32,7 +32,14 @@ const LandmarkList: React.FC<LandmarkListProps> = ({
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-3">Nearby Grocery Stores</h2>
+      <h2 className="text-lg font-semibold mb-3">
+        {categories.length === 0 
+          ? 'Top 10 Closest Places' 
+          : categories.length === 1 
+          ? `Nearby ${categories[0]}s` 
+          : 'Nearby Places'
+        }
+      </h2>
       <ul className="space-y-2">
         {filtered.map((landmark) => (
           <li key={landmark.id} className="p-3 border rounded bg-white">

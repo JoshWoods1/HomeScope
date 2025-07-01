@@ -7,6 +7,20 @@ import LandmarkList from "../components/LandmarkList";
 import { PlaceResult } from "@/types/types";
 import { Landmark } from "@/types/types";
 import { convertPlaceResultsToLandmarks } from "@/utils/convertPlaceResults";
+import { detectCategory } from "@/utils/categoryDetector";
+
+// Distance calculation function
+function getDistanceMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (x: number) => (x * Math.PI) / 180;
+  const R = 3958.8; // miles
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return parseFloat((R * c).toFixed(2));
+}
 
 export default function HomePage() {
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -18,32 +32,93 @@ export default function HomePage() {
   const [landmarks, setLandmarks] = useState<Landmark[]>([]); // updated type
 
   useEffect(() => {
-    const fetchNearbyGroceryStores = async () => {
-      if (!selectedLocation) return;
+    const fetchNearbyPlaces = async () => {
+      if (!selectedLocation) {
+        setLandmarks([]);
+        return;
+      }
 
       try {
-        const res = await fetch(
-          `/api/places?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}`
-        );
-        const data: PlaceResult[] = await res.json();
-        console.log("Fetched places:", data);
-        if (res.ok) {
-          const converted = convertPlaceResultsToLandmarks(
-            data,
-            selectedLocation,
-            "Grocery Store"
+        // If no categories selected, fetch top 10 closest places of any type
+        if (selectedCategories.length === 0) {
+          const res = await fetch(
+            `/api/nearby?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}`
           );
-          setLandmarks(converted);
-        } else {
-          console.error("Failed to fetch grocery stores", data);
+          
+          if (res.ok) {
+            const data: PlaceResult[] = await res.json();
+            const landmarks = data.map((place, i) => {
+              const lat = place.geometry?.location.lat;
+              const lng = place.geometry?.location.lng;
+              
+              const distanceMiles = lat && lng
+                ? getDistanceMiles(selectedLocation.lat, selectedLocation.lng, lat, lng)
+                : 0;
+              
+              return {
+                id: place.place_id || `${i}`,
+                name: place.name || 'Unknown',
+                category: detectCategory(place),
+                distanceMiles,
+              };
+            });
+            
+            setLandmarks(landmarks);
+          } else {
+            console.error('Failed to fetch nearby places', await res.json());
+          }
+          return;
         }
+
+        // If categories are selected, fetch places for each selected category
+        const promises = selectedCategories.map(async (category) => {
+          const res = await fetch(
+            `/api/places?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}&category=${encodeURIComponent(category)}`
+          );
+          
+          if (res.ok) {
+            const data: PlaceResult[] = await res.json();
+            return convertPlaceResultsToLandmarks(
+              data,
+              selectedLocation,
+              category
+            );
+          } else {
+            console.error(`Failed to fetch ${category}`, await res.json());
+            return [];
+          }
+        });
+
+        const results = await Promise.all(promises);
+        const allLandmarks = results.flat();
+        
+        // Deduplicate by place_id and combine categories
+        const landmarkMap: { [key: string]: Landmark } = {};
+        
+        allLandmarks.forEach(landmark => {
+          const existingLandmark = landmarkMap[landmark.id];
+          if (existingLandmark) {
+            // If landmark already exists, combine categories
+            if (!existingLandmark.category.includes(landmark.category)) {
+              existingLandmark.category = `${existingLandmark.category}, ${landmark.category}`;
+            }
+          } else {
+            landmarkMap[landmark.id] = { ...landmark };
+          }
+        });
+        
+        // Convert back to array and sort by distance
+        const uniqueLandmarks: Landmark[] = Object.values(landmarkMap);
+        uniqueLandmarks.sort((a, b) => a.distanceMiles - b.distanceMiles);
+        
+        setLandmarks(uniqueLandmarks);
       } catch (err) {
-        console.error("Error fetching grocery stores", err);
+        console.error("Error fetching places", err);
       }
     };
 
-    fetchNearbyGroceryStores();
-  }, [selectedLocation]);
+    fetchNearbyPlaces();
+  }, [selectedLocation, selectedCategories]);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-300 text-gray-800 font-sans">
