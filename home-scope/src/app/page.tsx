@@ -142,98 +142,135 @@ export default function HomePage() {
   }, [searchLocation, selectedCategories]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-300 text-gray-800 font-sans">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
-      <header className="px-6 py-4 border-b border-gray-200 text-center">
-        <h1 className="text-2xl font-medium tracking-tight">HomeScope</h1>
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-center items-center py-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">HomeScope</h1>
+            </div>
+          </div>
+        </div>
       </header>
 
       {/* Controls */}
-      <section className="px-4 py-6 border-b border-gray-100">
-        <div className="max-w-xl mx-auto space-y-4">
-          <input
-            type="text"
-            placeholder="Enter address or coordinates (lat,lng)"
-            className="w-full p-2 border border-gray-200 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            onKeyDown={async (e) => {
-              if (e.key === "Enter" && address.trim()) {
-                try {
-                  const res = await fetch(
-                    `/api/geocode?address=${encodeURIComponent(address)}`
-                  );
-                  const data = await res.json();
+      <section className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-2xl mx-auto space-y-6">
+            {/* Search Input */}
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Enter address or coordinates (lat,lng)"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 shadow-sm"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter" && address.trim()) {
+                    try {
+                      const res = await fetch(
+                        `/api/geocode?address=${encodeURIComponent(address)}`
+                      );
+                      const data = await res.json();
 
-                  if (res.ok && data.lat && data.lng) {
-                    const newLocation = {
-                      lat: parseFloat(data.lat),
-                      lng: parseFloat(data.lng),
-                    };
-                    setSearchLocation(newLocation);
-                    setMapCenter(newLocation); // Also center the map on the new search location
-                  } else {
-                    alert(`Error: ${data.error}`);
+                      if (res.ok && data.lat && data.lng) {
+                        const newLocation = {
+                          lat: parseFloat(data.lat),
+                          lng: parseFloat(data.lng),
+                        };
+                        setSearchLocation(newLocation);
+                        setMapCenter(newLocation); // Also center the map on the new search location
+                      } else {
+                        alert(`Error: ${data.error}`);
+                      }
+                    } catch (error) {
+                      console.error("Geocoding request failed", error);
+                      alert("Geocoding request failed.");
+                    }
                   }
-                } catch (error) {
-                  console.error("Geocoding request failed", error);
-                  alert("Geocoding request failed.");
-                }
-              }
-            }}
-          />
+                }}
+              />
+            </div>
 
-          <LandmarkFilters
-            selectedCategories={selectedCategories}
-            setSelectedCategories={setSelectedCategories}
-          />
-          
-          {/* Back to search location button */}
-          {searchLocation && mapCenter && 
-           (searchLocation.lat !== mapCenter.lat || searchLocation.lng !== mapCenter.lng) && (
-            <button
-              onClick={() => {
-                setMapCenter(searchLocation);
-                setFocusedLandmark(null);
-              }}
-              className="w-full p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
-            >
-              Return to Search Location
-            </button>
-          )}
+            {/* Category Filters */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Filter by Category</h3>
+              <LandmarkFilters
+                selectedCategories={selectedCategories}
+                setSelectedCategories={setSelectedCategories}
+              />
+            </div>
+            
+            {/* Back to search location button */}
+            {searchLocation && mapCenter && 
+             (searchLocation.lat !== mapCenter.lat || searchLocation.lng !== mapCenter.lng) && (
+              <button
+                onClick={() => {
+                  setMapCenter(searchLocation);
+                  setFocusedLandmark(null);
+                }}
+                className="w-full p-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 text-sm font-medium shadow-sm flex items-center justify-center space-x-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                </svg>
+                <span>Return to Search Location</span>
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
       {/* Main content - Map + Landmark List */}
-      <main className="flex flex-col md:flex-row flex-grow">
+      <main className="flex-1 flex flex-col lg:flex-row max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 gap-6">
         {/* Map */}
-        <div className="flex-1 min-h-[400px]">
-          <Map
-            selectedLocation={mapCenter}
-            setSelectedLocation={setMapCenter}
-            selectedCategories={selectedCategories}
-            landmarks={landmarks}
-            focusedLandmark={focusedLandmark}
-            setFocusedLandmark={setFocusedLandmark}
-            searchLocation={searchLocation}
-          />
+        <div className="flex-1 bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="h-[600px] w-full">
+            <Map
+              selectedLocation={mapCenter}
+              setSelectedLocation={setMapCenter}
+              selectedCategories={selectedCategories}
+              landmarks={landmarks}
+              focusedLandmark={focusedLandmark}
+              setFocusedLandmark={setFocusedLandmark}
+              searchLocation={searchLocation}
+            />
+          </div>
         </div>
 
         {/* Landmark List */}
-        <aside className="md:w-1/3 border-t md:border-t-0 md:border-l border-gray-200 p-4 overflow-auto max-h-[400px] bg-gray-50">
-          <LandmarkList
-            location={searchLocation}
-            categories={selectedCategories}
-            landmarks={landmarks}
-            focusedLandmark={focusedLandmark}
-            onLandmarkClick={handleLandmarkClick}
-          />
+        <aside className="lg:w-96 bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
+          <div className="h-[600px] overflow-y-auto">
+            <LandmarkList
+              location={searchLocation}
+              categories={selectedCategories}
+              landmarks={landmarks}
+              focusedLandmark={focusedLandmark}
+              onLandmarkClick={handleLandmarkClick}
+            />
+          </div>
         </aside>
       </main>
 
       {/* Footer */}
-      <footer className="px-4 py-4 border-t border-gray-200 text-center text-sm text-gray-500">
-        &copy; 2025 Josh Woods — HomeScope
+      <footer className="bg-white border-t border-gray-200 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <p className="text-center text-sm text-gray-500">
+            &copy; 2025 Josh Woods — HomeScope
+          </p>
+        </div>
       </footer>
     </div>
   );
