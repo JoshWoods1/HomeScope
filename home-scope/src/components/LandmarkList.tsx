@@ -11,12 +11,16 @@ interface LandmarkListProps {
   location: { lat: number; lng: number } | null;
   categories: string[];
   landmarks: Landmark[];
+  focusedLandmark: string | null;
+  onLandmarkClick: (landmarkId: string) => void;
 }
 
 const LandmarkList: React.FC<LandmarkListProps> = ({
   location,
   categories,
   landmarks,
+  focusedLandmark,
+  onLandmarkClick,
 }) => {
   if (!location) {
     return <p className="text-gray-500">Please enter an address to see results.</p>;
@@ -42,7 +46,15 @@ const LandmarkList: React.FC<LandmarkListProps> = ({
       </h2>
       <ul className="space-y-2">
         {filtered.map((landmark) => (
-          <li key={landmark.id} className="p-3 border rounded bg-white">
+          <li 
+            key={landmark.id} 
+            className={`p-3 border rounded cursor-pointer transition-colors ${
+              landmark.id === focusedLandmark 
+                ? 'bg-yellow-100 border-yellow-400' 
+                : 'bg-white hover:bg-gray-50'
+            }`}
+            onClick={() => onLandmarkClick(landmark.id)}
+          >
             <h3 className="font-medium">{landmark.name}</h3>
             <p className="text-sm text-gray-600">
               {landmark.category} — {landmark.distanceMiles} mi

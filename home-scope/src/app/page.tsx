@@ -23,26 +23,45 @@ function getDistanceMiles(lat1: number, lng1: number, lat2: number, lng2: number
 }
 
 export default function HomePage() {
-  const [selectedLocation, setSelectedLocation] = useState<{
+  const [searchLocation, setSearchLocation] = useState<{
     lat: number;
     lng: number;
-  } | null>(null);
+  } | null>(null); // The original searched location
+  const [mapCenter, setMapCenter] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null); // The current map center (can change when clicking landmarks)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [address, setAddress] = useState("");
   const [landmarks, setLandmarks] = useState<Landmark[]>([]); // updated type
+  const [focusedLandmark, setFocusedLandmark] = useState<string | null>(null);
+
+  // Function to handle landmark click and center map
+  const handleLandmarkClick = (landmarkId: string) => {
+    setFocusedLandmark(landmarkId);
+    
+    // Find the landmark and center map on it (but don't change search location)
+    const landmark = landmarks.find(l => l.id === landmarkId);
+    if (landmark) {
+      setMapCenter({ lat: landmark.lat, lng: landmark.lng });
+    }
+  };
 
   useEffect(() => {
     const fetchNearbyPlaces = async () => {
-      if (!selectedLocation) {
+      if (!searchLocation) {
         setLandmarks([]);
         return;
       }
+
+      // Clear focused landmark when location changes
+      setFocusedLandmark(null);
 
       try {
         // If no categories selected, fetch top 10 closest places of any type
         if (selectedCategories.length === 0) {
           const res = await fetch(
-            `/api/nearby?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}`
+            `/api/nearby?lat=${searchLocation.lat}&lng=${searchLocation.lng}`
           );
           
           if (res.ok) {
@@ -52,7 +71,7 @@ export default function HomePage() {
               const lng = place.geometry?.location.lng;
               
               const distanceMiles = lat && lng
-                ? getDistanceMiles(selectedLocation.lat, selectedLocation.lng, lat, lng)
+                ? getDistanceMiles(searchLocation.lat, searchLocation.lng, lat, lng)
                 : 0;
               
               return {
@@ -60,6 +79,8 @@ export default function HomePage() {
                 name: place.name || 'Unknown',
                 category: detectCategory(place),
                 distanceMiles,
+                lat: lat || 0,
+                lng: lng || 0,
               };
             });
             
@@ -73,14 +94,14 @@ export default function HomePage() {
         // If categories are selected, fetch places for each selected category
         const promises = selectedCategories.map(async (category) => {
           const res = await fetch(
-            `/api/places?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}&category=${encodeURIComponent(category)}`
+            `/api/places?lat=${searchLocation.lat}&lng=${searchLocation.lng}&category=${encodeURIComponent(category)}`
           );
           
           if (res.ok) {
             const data: PlaceResult[] = await res.json();
             return convertPlaceResultsToLandmarks(
               data,
-              selectedLocation,
+              searchLocation,
               category
             );
           } else {
@@ -118,7 +139,7 @@ export default function HomePage() {
     };
 
     fetchNearbyPlaces();
-  }, [selectedLocation, selectedCategories]);
+  }, [searchLocation, selectedCategories]);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-300 text-gray-800 font-sans">
@@ -145,10 +166,12 @@ export default function HomePage() {
                   const data = await res.json();
 
                   if (res.ok && data.lat && data.lng) {
-                    setSelectedLocation({
+                    const newLocation = {
                       lat: parseFloat(data.lat),
                       lng: parseFloat(data.lng),
-                    });
+                    };
+                    setSearchLocation(newLocation);
+                    setMapCenter(newLocation); // Also center the map on the new search location
                   } else {
                     alert(`Error: ${data.error}`);
                   }
@@ -164,6 +187,20 @@ export default function HomePage() {
             selectedCategories={selectedCategories}
             setSelectedCategories={setSelectedCategories}
           />
+          
+          {/* Back to search location button */}
+          {searchLocation && mapCenter && 
+           (searchLocation.lat !== mapCenter.lat || searchLocation.lng !== mapCenter.lng) && (
+            <button
+              onClick={() => {
+                setMapCenter(searchLocation);
+                setFocusedLandmark(null);
+              }}
+              className="w-full p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+            >
+              Return to Search Location
+            </button>
+          )}
         </div>
       </section>
 
@@ -172,18 +209,24 @@ export default function HomePage() {
         {/* Map */}
         <div className="flex-1 min-h-[400px]">
           <Map
-            selectedLocation={selectedLocation}
-            setSelectedLocation={setSelectedLocation}
+            selectedLocation={mapCenter}
+            setSelectedLocation={setMapCenter}
             selectedCategories={selectedCategories}
+            landmarks={landmarks}
+            focusedLandmark={focusedLandmark}
+            setFocusedLandmark={setFocusedLandmark}
+            searchLocation={searchLocation}
           />
         </div>
 
         {/* Landmark List */}
         <aside className="md:w-1/3 border-t md:border-t-0 md:border-l border-gray-200 p-4 overflow-auto max-h-[400px] bg-gray-50">
           <LandmarkList
-            location={selectedLocation}
+            location={searchLocation}
             categories={selectedCategories}
             landmarks={landmarks}
+            focusedLandmark={focusedLandmark}
+            onLandmarkClick={handleLandmarkClick}
           />
         </aside>
       </main>

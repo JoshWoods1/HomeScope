@@ -16,4 +16,6 @@ export interface Landmark {
   name: string;
   category: string;
   distanceMiles: number;
+  lat: number;
+  lng: number;
 }

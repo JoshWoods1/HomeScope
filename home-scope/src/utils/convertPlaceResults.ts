@@ -18,6 +18,8 @@ export function convertPlaceResultsToLandmarks(
       name: place.name || 'Unknown',
       category,
       distanceMiles,
+      lat: lat || 0,
+      lng: lng || 0,
     };
   });
 }

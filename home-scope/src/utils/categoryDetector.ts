@@ -27,7 +27,16 @@ export function detectCategory(place: PlaceResult): string {
   }
   
   if (types.includes('hospital') || types.includes('doctor') || types.includes('pharmacy')) {
-    return 'Healthcare';
+    return 'Hospital';
+  }
+  
+  if (types.includes('movie_theater') || types.includes('theater')) {
+    return 'Theater';
+  }
+  
+  if (types.includes('amusement_park') || types.includes('bowling_alley') || 
+      types.includes('casino') || types.includes('night_club') || types.includes('zoo')) {
+    return 'Entertainment';
   }
   
   if (types.includes('bank') || types.includes('atm')) {

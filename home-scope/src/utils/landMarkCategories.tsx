@@ -32,6 +32,21 @@ export const categoryMappings: Record<string, CategoryMapping> = {
     displayName: 'Restaurant',
     googleKeyword: 'restaurant',
     googleType: 'restaurant'
+  },
+  'Hospital': {
+    displayName: 'Hospital',
+    googleKeyword: 'hospital',
+    googleType: 'hospital'
+  },
+  'Theater': {
+    displayName: 'Theater',
+    googleKeyword: 'movie theater',
+    googleType: 'movie_theater'
+  },
+  'Entertainment': {
+    displayName: 'Entertainment',
+    googleKeyword: 'entertainment',
+    googleType: 'amusement_park'
   }
 };
 
